@@ -2,113 +2,95 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from langchain.llms import OpenAI
+from langchain_anthropic import ChatAnthropic  # Free tier
+from langchain_google_genai import ChatGoogleGenerativeAI  # Free tier
+from langchain_core.prompts import PromptTemplate
 from langchain.chains import LLMChain
-from langchain.prompts import PromptTemplate
-import os
 
 # --- Setup ---
-st.set_page_config(page_title="AI Data Analyst", layout="wide", page_icon="🤖")
-st.title("🤖 AI-Powered Data Analysis")
-st.caption("Upload any CSV/Excel file and get instant insights powered by AI")
+st.set_page_config(page_title="Free AI Analyst", layout="wide")
+st.title("🌐 100% Free Cloud AI Data Analysis")
+st.caption("Uses Claude Haiku (Anthropic) + Gemini (Google) - No credit card needed")
 
-# --- Sidebar for API Key (Hide when deploying) ---
-with st.sidebar:
-    st.header("Settings")
-    api_key = st.text_input("Enter OpenAI API Key", type="password")
-    if api_key:
-        os.environ["OPENAI_API_KEY"] = api_key  # LangChain will use this
+# --- Free API Options ---
+llm_choice = st.sidebar.radio(
+    "Choose AI Model",
+    ["Claude 3 Haiku (Recommended)", "Gemini Pro"],
+    index=0
+)
 
-# --- AI Analysis Function ---
-def generate_ai_insights(df: pd.DataFrame) -> str:
-    """Use LangChain with OpenAI to analyze data."""
-    template = """You are a senior data analyst. Analyze this CSV data sample:
+# --- Helper Functions ---
+def analyze_with_ai(df: pd.DataFrame, llm) -> str:
+    """Generic analysis function for any LLM"""
+    template = """Analyze this data sample:
     
     {sample_data}
     
     Provide:
-    1. 3 key trends
-    2. 2 potential anomalies
-    3. 2 actionable recommendations
-    4. 1 interesting question to explore
+    1. **3 Key Trends** (with specific numbers)
+    2. **2 Anomalies** (unusual patterns)
+    3. **2 Recommendations** (actionable insights)
     
-    Format your response in Markdown with bold headers."""
+    Format in Markdown with bold headers."""
     
     prompt = PromptTemplate(
         input_variables=["sample_data"],
         template=template
     )
     
-    chain = LLMChain(
-        llm=OpenAI(temperature=0, model_name="gpt-3.5-turbo-instruct"),
-        prompt=prompt
-    )
-    
-    return chain.run(sample_data=df.head(5).to_markdown())
+    chain = LLMChain(llm=llm, prompt=prompt)
+    return chain.run(sample_data=df.head().to_markdown())
 
 # --- Main App ---
-uploaded_file = st.file_uploader(
-    "Drag & drop any CSV or Excel file",
-    type=["csv", "xlsx"],
-    accept_multiple_files=False
-)
+uploaded_file = st.file_uploader("Upload CSV/Excel", type=["csv", "xlsx"])
 
 if uploaded_file:
-    # Load Data
     try:
-        if uploaded_file.name.endswith('.csv'):
-            df = pd.read_csv(uploaded_file)
-        else:
-            df = pd.read_excel(uploaded_file)
+        # Load Data
+        df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
         
+        # Data Preview
         with st.expander("🔍 Raw Data Preview", expanded=True):
             st.dataframe(df.head(), use_container_width=True)
-            
-        # Basic Stats
-        with st.expander("📊 Basic Statistics"):
-            st.write("**Numerical Columns:**")
-            st.dataframe(df.describe(), use_container_width=True)
-            
-            st.write("**Categorical Columns:**")
-            cat_cols = df.select_dtypes(include=['object']).columns
-            for col in cat_cols:
-                st.write(f"**{col}**: {df[col].nunique()} unique values")
-    
+
         # Auto-Visualizations
-        with st.expander("📈 Smart Visualizations"):
+        if st.checkbox("Show Automatic Visualizations"):
             num_cols = df.select_dtypes(include=['number']).columns
-            date_cols = df.select_dtypes(include=['datetime']).columns
-            
             if len(num_cols) > 0:
-                col1, col2 = st.columns(2)
-                
-                # Histogram
-                with col1:
-                    selected_num = st.selectbox("Select numerical column:", num_cols)
-                    fig = px.histogram(df, x=selected_num)
-                    st.plotly_chart(fig, use_container_width=True)
-                
-                # Time Series (if date column exists)
-                if len(date_cols) > 0 and len(num_cols) > 0:
-                    with col2:
-                        date_col = st.selectbox("Select date column:", date_cols)
-                        num_col = st.selectbox("Select value column:", num_cols)
-                        fig = px.line(df, x=date_col, y=num_col)
-                        st.plotly_chart(fig, use_container_width=True)
-    
-        # AI Insights
-        if api_key:
-            with st.spinner("🧠 Generating AI insights..."):
-                insights = generate_ai_insights(df)
-            
-            with st.expander("💡 AI-Powered Insights", expanded=True):
-                st.markdown(insights)
-        else:
-            st.warning("ℹ️ Enter an OpenAI API key in the sidebar to unlock AI insights")
-    
+                selected_col = st.selectbox("Select column to visualize:", num_cols)
+                fig = px.histogram(df, x=selected_col)
+                st.plotly_chart(fig, use_container_width=True)
+
+        # AI Analysis
+        if st.button("Generate AI Insights"):
+            with st.spinner("🌩️ Using free cloud AI..."):
+                try:
+                    if llm_choice.startswith("Claude"):
+                        llm = ChatAnthropic(
+                            model="claude-3-haiku-20240307",
+                            temperature=0,
+                            max_tokens=1000
+                        )  # Free tier: https://console.anthropic.com
+                    else:
+                        llm = ChatGoogleGenerativeAI(
+                            model="gemini-pro",
+                            temperature=0
+                        )  # Free tier: https://aistudio.google.com
+                    
+                    insights = analyze_with_ai(df, llm)
+                    st.markdown(insights)
+                    
+                except Exception as e:
+                    st.error(f"AI service error: {str(e)}")
+                    st.info("Try another free model or check API availability")
+
     except Exception as e:
         st.error(f"Error processing file: {str(e)}")
 
 # --- Footer ---
 st.divider()
-st.caption("Built with Streamlit • Host on [Streamlit Cloud](https://streamlit.io/cloud) for free")
+st.caption("""
+    Free APIs from [Anthropic](https://anthropic.com) and [Google AI Studio](https://aistudio.google.com) | 
+    [Deploy on Streamlit](https://streamlit.io/cloud) | 
+    No credit card required
+""")
