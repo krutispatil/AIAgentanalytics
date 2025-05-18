@@ -542,6 +542,21 @@ with sample_expander:
                 "amount": np.random.uniform(10, 5000, 60).round(2),
                 "balance_after": np.random.uniform(1000, 10000, 60).round(2)
             })
+        elif sample_type == "Website Metrics":  # New dataset added here
+            df = pd.DataFrame({
+                "date": pd.date_range(start="2024-01-01", periods=30),
+                "sessions": np.random.randint(1000, 10000, 30),
+                "users": np.random.randint(800, 8000, 30),
+                "page_views": np.random.randint(2000, 20000, 30),
+                "avg_session_duration": np.random.uniform(30, 300, 30).round(1),
+                "bounce_rate": np.random.uniform(0.3, 0.7, 30).round(3),
+                "conversion_rate": np.random.uniform(0.01, 0.05, 30).round(4),
+                "traffic_source": np.random.choice(
+                    ["Organic", "Direct", "Referral", "Social", "Email", "Paid"], 
+                    30,
+                    p=[0.4, 0.2, 0.15, 0.1, 0.1, 0.05]
+                )
+            })
         else:  # Marketing Campaigns
             df = pd.DataFrame({
                 "campaign_date": pd.date_range(start="2024-01-01", periods=30, freq='D'),
