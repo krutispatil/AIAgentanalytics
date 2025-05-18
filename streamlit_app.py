@@ -503,7 +503,7 @@ sample_expander = st.expander("💡 Don't have data? Try sample datasets")
 with sample_expander:
     sample_type = st.selectbox(
         "Choose Sample Data:",
-        ["Retail Sales", "HR Metrics", "Health Data", "Financial Transactions", "Marketing Campaigns"],
+        ["Retail Sales", "HR Metrics", "Health Data", "Financial Transactions", "Website Metrics", "Marketing Campaigns"],
         key="sample_selector"
     )
     
