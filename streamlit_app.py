@@ -49,13 +49,12 @@ def detect_data_type(df):
     """Identify the likely domain of the dataset"""
     column_names = ' '.join(df.columns).lower()
     
-    # Common patterns for different data types
     patterns = {
-        'sales': ['sale', 'revenue', 'transaction', 'customer', 'product', 'order'],
-        'hr': ['employee', 'salary', 'department', 'hire date', 'performance'],
+        'sales': ['sale', 'revenue', 'transaction', 'customer', 'product', 'order', 'profit'],
+        'hr': ['employee', 'salary', 'department', 'hire date', 'performance', 'attrition'],
         'health': ['patient', 'diagnosis', 'treatment', 'blood', 'pressure', 'medical'],
-        'financial': ['account', 'balance', 'transaction', 'interest', 'loan'],
-        'marketing': ['campaign', 'conversion', 'lead', 'click', 'impression']
+        'financial': ['account', 'balance', 'transaction', 'interest', 'loan', 'payment'],
+        'marketing': ['campaign', 'conversion', 'lead', 'click', 'impression', 'ctr']
     }
     
     scores = {data_type: 0 for data_type in patterns}
@@ -135,12 +134,10 @@ def check_analysis_limitations(df):
     """Identify potential analysis limitations"""
     limitations = []
     
-    # Check for numeric columns
     numeric_cols = df.select_dtypes(include='number').columns
     if len(numeric_cols) < 1:
         limitations.append("No numeric columns found - statistical analyses disabled")
     
-    # Check for date columns
     date_cols = df.select_dtypes(include='datetime').columns
     if len(date_cols) < 1:
         limitations.append("No date columns found - time series analyses disabled")
@@ -148,12 +145,10 @@ def check_analysis_limitations(df):
         if not pd.api.types.is_datetime64_any_dtype(df[date_cols[0]]):
             limitations.append(f"Date column '{date_cols[0]}' not properly formatted - time series may be inaccurate")
     
-    # Check for categorical columns
     cat_cols = df.select_dtypes(include=['object', 'category']).columns
     if len(cat_cols) < 1:
         limitations.append("No categorical columns found - segmentation analyses disabled")
     
-    # Check for sufficient data points
     if len(df) < 10:
         limitations.append("Very small dataset (<10 rows) - results may not be statistically significant")
     
@@ -214,7 +209,7 @@ def run_full_analysis(df):
         # 2. Automated Visualizations
         st.header("2. Key Visual Insights")
         
-        # A. Distribution Analysis (for all numeric columns)
+        # A. Distribution Analysis
         if overview_stats['numeric_cols']:
             st.subheader("📊 Value Distributions")
             cols = st.columns(2)
@@ -223,7 +218,6 @@ def run_full_analysis(df):
                     fig = px.histogram(df, x=col, title=f"Distribution of {col}")
                     st.plotly_chart(fig, use_container_width=True)
                     
-                    # Generate explanation
                     context = {
                         "column": col,
                         "mean": df[col].mean(),
@@ -249,16 +243,15 @@ def run_full_analysis(df):
                     with st.expander(f"Analysis of {col}"):
                         st.markdown(analysis)
 
-        # B. Time Series Analysis (if date column exists)
+        # B. Time Series Analysis
         if overview_stats['date_cols'] and overview_stats['numeric_cols']:
             st.subheader("⏳ Time Trends")
-            date_col = overview_stats['date_cols'][0]  # Use first date column
-            num_col = overview_stats['numeric_cols'][0]  # Use first numeric column
+            date_col = overview_stats['date_cols'][0]
+            num_col = overview_stats['numeric_cols'][0]
             
             fig = px.line(df, x=date_col, y=num_col, title=f"{num_col} Over Time")
             st.plotly_chart(fig, use_container_width=True)
             
-            # Time series explanation
             context = {
                 "metric": num_col,
                 "time_period": date_col,
@@ -281,14 +274,13 @@ def run_full_analysis(df):
             with st.expander("Time Series Insights"):
                 st.markdown(analysis)
 
-        # C. Correlation Analysis (if >=2 numeric columns)
+        # C. Correlation Analysis
         if len(overview_stats['numeric_cols']) >= 2:
             st.subheader("🔗 Relationships Between Metrics")
             corr = df[overview_stats['numeric_cols']].corr()
             fig = px.imshow(corr, text_auto=True, title="Correlation Heatmap")
             st.plotly_chart(fig, use_container_width=True)
             
-            # Find top correlations
             corr_matrix = df[overview_stats['numeric_cols']].corr().abs()
             top_corr = (corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
                        .stack()
@@ -315,19 +307,18 @@ def run_full_analysis(df):
             with st.expander("Correlation Insights"):
                 st.markdown(analysis)
 
-        # D. Categorical Analysis (if categorical data exists)
+        # D. Categorical Analysis
         cat_cols = df.select_dtypes(include=['object', 'category']).columns
         if len(cat_cols) > 0 and len(overview_stats['numeric_cols']) > 0:
             st.subheader("📦 Category Breakdowns")
-            cat_col = cat_cols[0]  # Use first categorical column
-            num_col = overview_stats['numeric_cols'][0]  # Use first numeric column
+            cat_col = cat_cols[0]
+            num_col = overview_stats['numeric_cols'][0]
             
-            if len(df[cat_col].unique()) <= 10:  # Avoid overplotting
+            if len(df[cat_col].unique()) <= 10:
                 fig = px.box(df, x=cat_col, y=num_col, 
                             title=f"{num_col} by {cat_col}")
                 st.plotly_chart(fig, use_container_width=True)
                 
-                # Category analysis
                 context = {
                     "category": cat_col,
                     "metric": num_col,
@@ -358,12 +349,10 @@ def run_full_analysis(df):
             date_col = overview_stats['date_cols'][0]
             num_col = overview_stats['numeric_cols'][0]
             
-            # Simple forecasting
             X = pd.to_numeric(pd.to_datetime(df[date_col])).values.reshape(-1, 1)
             y = df[num_col].values
             model = LinearRegression().fit(X, y)
             
-            # Generate forecast
             future_dates = pd.date_range(
                 start=df[date_col].max(), 
                 periods=5, 
@@ -372,7 +361,6 @@ def run_full_analysis(df):
             future_X = pd.to_numeric(future_dates).values.reshape(-1, 1)
             predictions = model.predict(future_X)
             
-            # Create plot
             fig = go.Figure()
             fig.add_trace(go.Scatter(
                 x=df[date_col], y=y,
@@ -392,7 +380,6 @@ def run_full_analysis(df):
             )
             st.plotly_chart(fig, use_container_width=True)
             
-            # Forecast explanation
             context = {
                 "metric": num_col,
                 "trend": "increasing" if model.coef_[0] > 0 else "decreasing",
@@ -419,27 +406,75 @@ def run_full_analysis(df):
 
         # 4. Executive Summary
         st.header("4. Executive Summary")
+        
+        # Calculate specific metrics for summary
+        if overview_stats['date_cols'] and overview_stats['numeric_cols']:
+            date_col = overview_stats['date_cols'][0]
+            num_col = overview_stats['numeric_cols'][0]
+            
+            time_range = f"{df[date_col].min().strftime('%b %d, %Y')} to {df[date_col].max().strftime('%b %d, %Y')}"
+            growth_pct = ((df[num_col].iloc[-1] - df[num_col].iloc[0]) / df[num_col].iloc[0] * 100)
+            
+            if 'revenue' in df.columns and 'units' in df.columns:
+                avg_price = (df['revenue'] / df['units']).mean()
+                price_trend = "increasing" if ((df['revenue'] / df['units']).iloc[-1] > 
+                                             (df['revenue'] / df['units']).iloc[0]) else "decreasing"
+            
+            if len(overview_stats['numeric_cols']) >= 2:
+                corr_matrix = df[overview_stats['numeric_cols']].corr().abs()
+                top_corr = (corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
+                           .stack()
+                           .sort_values(ascending=False)
+                           .head(1))
+                strongest_pair = list(top_corr.index[0])
+                strongest_value = top_corr.values[0]
+        
         context = {
             "data_shape": f"{overview_stats['rows']} rows × {overview_stats['cols']} columns",
             "key_metrics": ", ".join(overview_stats['numeric_cols'][:3]),
-            "time_range": f"{df[date_col].min().date()} to {df[date_col].max().date()}" 
-                          if overview_stats['date_cols'] else "N/A",
+            "time_range": time_range if overview_stats['date_cols'] else "N/A",
             "data_type": data_type,
-            "limitations": "\n".join(f"- {lim}" for lim in limitations) if limitations else "None"
+            "limitations": "\n".join(f"- {lim}" for lim in limitations) if limitations else "None",
+            "time_metric": num_col if overview_stats['date_cols'] else "N/A",
+            "growth_pct": f"{growth_pct:.1f}%" if overview_stats['date_cols'] else "N/A",
+            "trend_direction": "increased" if growth_pct > 0 else "decreased",
+            "avg_value": f"{df[num_col].mean():.2f}" if overview_stats['numeric_cols'] else "N/A",
+            "top_corr_pair": f"{strongest_pair[0]} and {strongest_pair[1]}" if len(overview_stats['numeric_cols']) >= 2 else "N/A",
+            "corr_strength": f"{strongest_value:.2f}" if len(overview_stats['numeric_cols']) >= 2 else "N/A",
+            "has_revenue_units": 'revenue' in df.columns and 'units' in df.columns,
+            "avg_price": f"{avg_price:.2f}" if 'revenue' in df.columns and 'units' in df.columns else "N/A",
+            "price_trend": price_trend if 'revenue' in df.columns and 'units' in df.columns else "N/A",
+            "cleaning_issues": cleaning_summary['missing_before'] + cleaning_summary['duplicates_removed']
         }
-        summary = generate_analysis(
-            """Create an executive summary for this {data_type} analysis:
-            - Dataset: {data_shape}
-            - Key Metrics: {key_metrics}
-            - Time Period: {time_range}
-            - Limitations: {limitations}
-            
-            Structure:
-            1. *Key Findings*: (3 bullet points)
-            2. *Urgent Issues*: (top 2 concerns)
-            3. *Strategic Recommendations*: (3 actionable items for {data_type})""",
-            context
-        )
+        
+        summary_prompt = """
+        Create a DETAILED executive summary for this {data_type} analysis with ACTUAL NUMBERS:
+        - Dataset: {data_shape}
+        - Key Metrics: {key_metrics}
+        - Time Period: {time_range}
+        - Limitations: {limitations}
+        
+        Structure your response with these specific elements:
+        
+        1. *Key Findings* (include exact numbers):
+        - Trend Analysis: "{time_metric}" {trend_direction} by {growth_pct} during {time_range}
+        - Average Performance: Mean value of {time_metric} was {avg_value}
+        {% if has_revenue_units %} - Pricing: Average price was {avg_price} with {price_trend} trend{% endif %}
+        {% if corr_strength != "N/A" %} - Key Relationship: {top_corr_pair} show {corr_strength} correlation{% endif %}
+        
+        2. *Urgent Issues*:
+        - Highlight top 2 data anomalies with specific values
+        - Data quality issues: {cleaning_issues} problems fixed during cleaning
+        
+        3. *Strategic Recommendations*:
+        - Provide 3 specific, actionable recommendations based on the metrics
+        - Suggest follow-up analyses that would be valuable
+        
+        Include specific numbers wherever possible and avoid generic statements.
+        Focus on business impact for {data_type} data.
+        """
+        
+        summary = generate_analysis(summary_prompt, context)
         st.markdown(summary)
 
 # --- Main App Flow ---
@@ -451,13 +486,11 @@ uploaded_file = st.file_uploader(
 
 if uploaded_file:
     try:
-        # Load data with smart date parsing
         if uploaded_file.name.endswith('.csv'):
             df = pd.read_csv(uploaded_file)
         else:
             df = pd.read_excel(uploaded_file)
         
-        # Run full analysis pipeline
         run_full_analysis(df)
         
     except Exception as e:
