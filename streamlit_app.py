@@ -459,8 +459,8 @@ def run_full_analysis(df):
         1. *Key Findings* (include exact numbers):
         - Trend Analysis: "{time_metric}" {trend_direction} by {growth_pct} during {time_range}
         - Average Performance: Mean value of {time_metric} was {avg_value}
-        {% if has_revenue_units %} - Pricing: Average price was {avg_price} with {price_trend} trend{% endif %}
-        {% if corr_strength != "N/A" %} - Key Relationship: {top_corr_pair} show {corr_strength} correlation{% endif %}
+        {{% if has_revenue_units %}} - Pricing: Average price was {avg_price} with {price_trend} trend{{% endif %}}
+        {{% if corr_strength != "N/A" %}} - Key Relationship: {top_corr_pair} show {corr_strength} correlation{{% endif %}}
         
         2. *Urgent Issues*:
         - Highlight top 2 data anomalies with specific values
