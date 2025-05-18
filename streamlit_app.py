@@ -501,38 +501,10 @@ if uploaded_file:
 with st.expander("💡 Don't have data? Try sample datasets"):
     sample_type = st.selectbox(
         "Choose Sample Data:",
-        ["Retail Sales", "Website Traffic", "IoT Sensor Data"]
-        ["Retail Sales", "Website Metrics", "Sensor Readings"],
+        ["Retail Sales", "HR Metrics", "Health Data", "Financial Transactions", "Marketing Campaigns"],
         key="sample_selector"
     )
-
-    if sample_type == "Retail Sales":
-        data = pd.DataFrame({
-            "date": pd.date_range(start="2024-01-01", periods=90),
-            "product": np.random.choice(["Laptop", "Phone", "Tablet"], 90),
-            "sales": np.random.randint(10, 100, 90),
-            "profit": np.round(np.random.uniform(5, 50, 90), 2),
-            "region": np.random.choice(["North", "South", "East", "West"], 90)
-        })
-    elif sample_type == "Website Traffic":
-        data = pd.DataFrame({
-            "date": pd.date_range(start="2024-01-01", periods=30),
-            "visitors": np.random.randint(1000, 5000, 30),
-            "conversions": (np.random.uniform(0.01, 0.05, 30) * 100).astype(int),
-            "bounce_rate": np.round(np.random.uniform(0.3, 0.7, 30), 2)
-        })
-    else:  # IoT Sensor Data
-        data = pd.DataFrame({
-            "timestamp": pd.date_range(start="2024-01-01", periods=1440, freq='T'),
-            "temperature": np.sin(np.linspace(0, 20, 1440)) * 10 + 25 + np.random.normal(0, 1, 1440),
-            "humidity": np.cos(np.linspace(0, 15, 1440)) * 20 + 50 + np.random.normal(0, 2, 1440),
-            "status": np.random.choice(["Normal", "Warning", "Error"], 1440, p=[0.9, 0.08, 0.02])
-        })
     
-    st.dataframe(data.head(3))
-    if st.button("Use This Sample"):
-        df = data
-        st.rerun()
     if st.button("Load Sample Data"):
         if sample_type == "Retail Sales":
             df = pd.DataFrame({
@@ -542,19 +514,40 @@ with st.expander("💡 Don't have data? Try sample datasets"):
                 "revenue": np.random.uniform(100, 5000, 90).round(2),
                 "region": np.random.choice(["North", "South", "East", "West"], 90)
             })
-        elif sample_type == "Website Metrics":
+        elif sample_type == "HR Metrics":
             df = pd.DataFrame({
-                "date": pd.date_range(start="2024-01-01", periods=30),
-                "visitors": np.random.randint(1000, 5000, 30),
-                "conversion_rate": np.random.uniform(0.01, 0.05, 30).round(3),
-                "avg_order_value": np.random.uniform(50, 200, 30).round(2)
+                "employee_id": range(1001, 1021),
+                "hire_date": pd.date_range(start="2020-01-01", periods=20, freq='M'),
+                "department": np.random.choice(["Engineering", "Marketing", "Sales", "HR"], 20),
+                "salary": np.random.randint(50000, 120000, 20),
+                "performance_score": np.random.uniform(1, 5, 20).round(1),
+                "attrition_risk": np.random.choice(["Low", "Medium", "High"], 20, p=[0.6, 0.3, 0.1])
             })
-        else:  # Sensor Readings
+        elif sample_type == "Health Data":
             df = pd.DataFrame({
-                "timestamp": pd.date_range(start="2024-01-01", periods=1440, freq='H'),
-                "temperature": np.sin(np.linspace(0, 20, 1440)) * 10 + 25,
-                "pressure": np.cos(np.linspace(0, 15, 1440)) * 5 + 100,
-                "status": np.random.choice(["Normal", "Warning"], 1440, p=[0.95, 0.05])
+                "patient_id": range(10001, 10051),
+                "visit_date": pd.date_range(start="2024-01-01", periods=50, freq='D'),
+                "age": np.random.randint(18, 80, 50),
+                "blood_pressure": [f"{np.random.randint(90, 140)}/{np.random.randint(60, 90)}" for _ in range(50)],
+                "cholesterol": np.random.choice(["Normal", "Borderline", "High"], 50, p=[0.6, 0.25, 0.15]),
+                "glucose_level": np.random.uniform(70, 200, 50).round(0)
+            })
+        elif sample_type == "Financial Transactions":
+            df = pd.DataFrame({
+                "transaction_date": pd.date_range(start="2024-01-01", periods=60, freq='D'),
+                "account_id": np.random.choice(["ACC100", "ACC101", "ACC102", "ACC103"], 60),
+                "transaction_type": np.random.choice(["Deposit", "Withdrawal", "Transfer"], 60),
+                "amount": np.random.uniform(10, 5000, 60).round(2),
+                "balance_after": np.random.uniform(1000, 10000, 60).round(2)
+            })
+        else:  # Marketing Campaigns
+            df = pd.DataFrame({
+                "campaign_date": pd.date_range(start="2024-01-01", periods=30, freq='D'),
+                "campaign_name": np.random.choice(["Summer Sale", "Holiday Promo", "New Product"], 30),
+                "impressions": np.random.randint(1000, 50000, 30),
+                "clicks": np.random.randint(50, 2500, 30),
+                "conversions": np.random.randint(5, 250, 30),
+                "cost": np.random.uniform(100, 5000, 30).round(2)
             })
         
         run_full_analysis(df)
