@@ -498,14 +498,16 @@ if uploaded_file:
         st.error("Please check that your file is properly formatted and try again.")
 
 # --- Sample Data Option ---
-with st.expander("💡 Don't have data? Try sample datasets"):
+# --- Sample Data Option ---
+sample_expander = st.expander("💡 Don't have data? Try sample datasets")
+with sample_expander:
     sample_type = st.selectbox(
         "Choose Sample Data:",
         ["Retail Sales", "HR Metrics", "Health Data", "Financial Transactions", "Marketing Campaigns"],
         key="sample_selector"
     )
     
-    if st.button("Load Sample Data"):
+    if st.button("Load Sample Data", key="load_sample_button"):
         if sample_type == "Retail Sales":
             df = pd.DataFrame({
                 "date": pd.date_range(start="2024-01-01", periods=90),
@@ -550,7 +552,14 @@ with st.expander("💡 Don't have data? Try sample datasets"):
                 "cost": np.random.uniform(100, 5000, 30).round(2)
             })
         
-        run_full_analysis(df)
+        st.session_state.df = df
+        st.rerun()
+
+# After the sample data section, add this:
+if 'df' in st.session_state:
+    run_full_analysis(st.session_state.df)
+        
+        
 
 # --- Footer ---
 st.divider()
