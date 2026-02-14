@@ -36,7 +36,7 @@ def generate_analysis(prompt_template, context):
     llm = ChatGoogleGenerativeAI(
     model="gemini-1.5-flash",  
     temperature=0.2,
-    api_key=st.secrets["GOOGLE_API_KEY"]
+    api_key=st.secrets["GOOGLE_API_KEY"])
 
 
     prompt = PromptTemplate(
