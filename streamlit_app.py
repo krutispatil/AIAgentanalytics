@@ -28,12 +28,12 @@ if 'GOOGLE_API_KEY' not in st.secrets:
         """)
     st.stop()
 
-# --- AI Analysis Functions ---#
+# --- AI Analysis Functions --- #
 def generate_analysis(prompt_template, context):
-    """Generate formatted business insights using LCEL"""
-    
+    """Generate formatted business insights using modern LangChain"""
+
     llm = ChatGoogleGenerativeAI(
-        model="gemini-1.5-flash-latest",
+        model="gemini-1.5-flash",   # ✅ FIXED
         temperature=0.2,
         google_api_key=st.secrets["GOOGLE_API_KEY"]
     )
@@ -43,12 +43,11 @@ def generate_analysis(prompt_template, context):
         template=prompt_template
     )
 
-    # 🔥 Modern LangChain (LCEL)
     chain = prompt | llm
-
     response = chain.invoke(context)
 
     return response.content
+
 
 
 # --- Data Type Detection ---
