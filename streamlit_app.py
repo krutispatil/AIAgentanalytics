@@ -27,6 +27,12 @@ if 'GOOGLE_API_KEY' not in st.secrets:
         3. Add it to Streamlit Cloud Secrets or secrets.toml
         """)
     st.stop()
+    # 🔍 DEBUG: Check available Gemini models #
+    import google.generativeai as genai
+    genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+    models = genai.list_models()
+    st.write("Available Models:")
+    st.write([m.name for m in models])
 
 # --- AI Analysis Functions --- #
 def generate_analysis(prompt_template, context):
