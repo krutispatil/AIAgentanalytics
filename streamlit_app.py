@@ -33,7 +33,7 @@ def generate_analysis(prompt_template, context):
     """Generate formatted business insights using modern LangChain"""
 
     llm = ChatGoogleGenerativeAI(
-    model="gemini-1.0-pro",  
+    model="gemini-1.5-flash-latest",  
     temperature=0.2,
     google_api_key=st.secrets["GOOGLE_API_KEY"])
 
