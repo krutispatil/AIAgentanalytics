@@ -7,7 +7,6 @@ from sklearn.linear_model import LinearRegression
 import numpy as np
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import PromptTemplate
-from langchain.chains import LLMChain
 from datetime import datetime
 
 # --- Setup ---
